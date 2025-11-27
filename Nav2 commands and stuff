@@ -1,0 +1,53 @@
+/map - costmap subscribes to this 
+(is the occupancy grid being dynamically or statically published?)
+(does the map publisher also offer /map_updates?)
+/odom - carrying nav_msgs/Odometry that the controller server uses.
+
+SLAM Toolbox = localization + map
+Nav2 = planning
+
+
+
+
+AMCL: Localization on a prebuilt map (needs laser/scan).  AMCL NOT NEEDED
+
+RTAB-Map: Full SLAM (mapping + localization). Already publishes map → odom, so no AMCL needed.
+
+For Nav2:
+
+With AMCL: /map from map_server + map → odom from AMCL.
+
+With RTAB-Map: /map and map → odom from RTAB-Map itself.
+
+
+
+
+LAUNCH SLAM TOOLBOX AS WELL
+ros2 launch slam_toolbox online_async_launch.py params_file:=/opt/ros/humble/share/slam_toolbox/config/mapper_params_online_async.yaml use_sim_time:=true
+ 
+
+cd /opt/ros/humble/share/slam_toolbox/config/   (location for slam toolbox stuff)
+
+
+
+NAV2
+ros2 launch nav2_bringup navigation_launch.py   params_file:=/opt/ros/humble/share/nav2_bringup/params/nav2_params.yaml   use_sim_time:=true   slam:=True
+(transforms for nav2)
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 odom base_link 
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom
+(giving manual goal)
+ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose "{pose: {header: {frame_id: 'map'}, pose: {position: {x: 0.5, y: 0.0, z: 0.0}, orientation: {w: 1.0}}}}"
+
+
+
+RTABMAP
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 zed_camera_link zed_imu_link
+ros2 launch rtabmap_examples zed.launch.py camera_model:=zed2i use_zed_odometery:=true
+
+
+
+
+ZED WRAPPER
+ros2 launch zed_wrapper zed2.launch.py publish_tf:=true
+
+
